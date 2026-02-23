@@ -1,4 +1,3 @@
-Historia de Usuario: Buscar productos
+Historia de Usuario: Calificar un producto comprado
 
-Como comprador quiero buscar productos por nombre para encontrar lo que necesito rápido.
-
+Como cliente que ya recibió su pedido quiero poder dejar una calificación y comentario del producto para ayudar a otros compradores a decidir.

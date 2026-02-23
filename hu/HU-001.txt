@@ -1,5 +1,3 @@
-Historia de Usuario: Login de usuario
+Historia de Usuario: Recuperar contraseña olvidada
 
-Como usuario quiero poder entrar al sistema con mi correo y contraseña para ver mis cosas.
-
-
+Como usuario registrado que olvidó su contraseña quiero poder recuperarla enviando un correo a mi email para volver a entrar al sistema.
