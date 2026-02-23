@@ -1,0 +1,3 @@
+Historia de Usuario: Notificaciones de pedido
+
+Como cliente quiero recibir notificaciones cuando mi pedido cambie de estado para saber cuando llegará.
