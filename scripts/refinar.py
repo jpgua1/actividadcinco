@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Refinador de Historias de Usuario con Google Gemini
+Refinador de Historias de Usuario con Google Gemini (SDK google-genai)
 Uso: python scripts/refinar.py hu/HU-001.txt
 """
 
@@ -8,7 +8,8 @@ import sys
 import os
 import re
 from pathlib import Path
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 PROMPT_SISTEMA = """
 Eres un agente experto en metodologías ágiles. Tu única tarea es transformar
@@ -80,16 +81,17 @@ def refinar_hu(ruta_entrada: str) -> None:
     ruta_salida = Path("refinada") / nombre_salida
 
     print(f"📄 Leyendo: {entrada}")
-    print(f"💬 Enviando a Gemini para refinamiento...")
+    print(f"💬 Enviando a Gemini 2.0 Flash para refinamiento...")
 
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    modelo = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=PROMPT_SISTEMA,
-    )
+    cliente = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-    respuesta = modelo.generate_content(
-        f"Refina esta historia de usuario:\n\n{contenido}"
+    respuesta = cliente.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=f"Refina esta historia de usuario:\n\n{contenido}",
+        config=types.GenerateContentConfig(
+            system_instruction=PROMPT_SISTEMA,
+            temperature=0.3,
+        ),
     )
 
     markdown = respuesta.text.strip()
