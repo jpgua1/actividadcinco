@@ -1,4 +1,5 @@
-#!/usr/bin/env python3"""
+#!/usr/bin/env python3
+"""
 Refinador de Historias de Usuario con Azure OpenAI
 Uso: python scripts/refinar.py hu/HU-001.txt
 """
