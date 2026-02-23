@@ -2,3 +2,4 @@ Historia de Usuario: Registro de nuevo usuario
 
 Como persona nueva quiero crear una cuenta con mi nombre, correo y contraseña para poder usar la plataforma.
 
+
