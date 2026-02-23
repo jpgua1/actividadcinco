@@ -1,0 +1,3 @@
+Historia de Usuario: Valoración de productos
+
+Como usuario que compró un producto quiero poder dejarlo una reseña y calificación para ayudar a otros compradores.

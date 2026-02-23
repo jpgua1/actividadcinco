@@ -1,0 +1,3 @@
+Historia de Usuario: Búsqueda de productos
+
+Como usuario quiero buscar productos por nombre o categoría para encontrar lo que necesito rápidamente.

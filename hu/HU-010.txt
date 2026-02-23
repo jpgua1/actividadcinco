@@ -1,0 +1,3 @@
+Historia de Usuario: Registro de nuevos usuarios
+
+Como visitante del sitio quiero poder crear una cuenta nueva para acceder a la plataforma.

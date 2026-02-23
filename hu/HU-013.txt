@@ -1,0 +1,3 @@
+Historia de Usuario: Proceso de pago
+
+Como usuario quiero poder pagar mis productos con tarjeta de crédito de forma segura para completar mi compra.

@@ -1,0 +1,3 @@
+Historia de Usuario: Carrito de compras
+
+Como usuario quiero agregar productos a mi carrito para comprarlos después.

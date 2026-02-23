@@ -1,0 +1,3 @@
+Historia de Usuario: Historial de pedidos
+
+Como usuario registrado quiero ver mis pedidos anteriores para hacer seguimiento de mis compras.

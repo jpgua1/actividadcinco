@@ -1,0 +1,3 @@
+Historia de Usuario: Lista de favoritos
+
+Como usuario quiero poder guardar productos en una lista de favoritos para encontrarlos fácilmente después.

@@ -1,0 +1,3 @@
+Historia de Usuario: Perfil de usuario
+
+Como usuario registrado quiero poder editar mi información personal y cambiar mi foto de perfil.

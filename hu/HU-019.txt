@@ -1,0 +1,3 @@
+Historia de Usuario: Notificaciones
+
+Como usuario quiero recibir notificaciones sobre el estado de mis pedidos y ofertas especiales.

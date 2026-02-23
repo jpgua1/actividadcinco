@@ -1,0 +1,3 @@
+Historia de Usuario: Recuperación de contraseña
+
+Como usuario que olvidó su contraseña quiero poder recuperarla por email para volver a acceder a mi cuenta.
