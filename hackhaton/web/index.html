@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Generador de Proyectos Digitales</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="Genera artefactos completos para arranque de proyectos digitales con IA" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/web/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+
+<body>
+    <header>
+        <div class="header-left">
+            <!-- NTT DATA Logo -->
+            <svg class="ntt-logo" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <text x="0" y="20" fill="white" font-family="Arial, sans-serif" font-weight="bold" font-size="20">NTT
+                    DATA</text>
+            </svg>
+            <p class="header-desc">Estimación inteligente de proyectos de software.</p>
+        </div>
+        <div class="header-right">
+            <h1>Agente de Estimación y Alcance</h1>
+        </div>
+    </header>
+
+    <main id="app">
+        <!-- FORMULARIO -->
+        <section id="form-section" class="card">
+            <h2>📄 Documentación Técnica</h2>
+            <form id="analyze-form" method="POST" action="javascript:void(0)">
+
+                <!-- ZONA DE UPLOAD -->
+                <div id="upload-zone" class="upload-zone">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">
+                        <strong>Arrastra tus archivos aquí</strong>
+                        <span>o haz clic para seleccionar</span>
+                    </div>
+                    <div class="upload-formats">PDF, TXT, DOC, DOCX, MD • Máx. 10 archivos • 50 MB total</div>
+                    <input type="file" id="file-input" accept=".pdf,.txt,.doc,.docx,.md,.json" multiple hidden />
+                </div>
+
+                <!-- LISTA DE ARCHIVOS SELECCIONADOS -->
+                <div id="files-list" class="files-list hidden">
+                    <div class="files-header">
+                        <span>📎 <strong id="files-count">0</strong> archivo(s) seleccionado(s)</span>
+                        <button type="button" id="add-more-files" class="add-more-btn">+ Agregar más</button>
+                    </div>
+                    <ul id="files-items"></ul>
+                    <div id="files-warning" class="files-warning hidden"></div>
+
+                    <!-- Info de límites -->
+                    <div class="files-limits-info">
+                        <span>📋 Límites: Máx. 10 archivos • 50 MB total</span>
+                    </div>
+
+                    <!-- Acciones -->
+                    <div class="files-actions">
+                        <button type="button" id="clear-all-files" class="btn-secondary">🗑️ Limpiar todo</button>
+                        <button type="button" id="process-files-btn" class="btn-primary">🤖 Procesar Documentos</button>
+                    </div>
+
+                    <!-- Campos ocultos para compatibilidad -->
+                    <input type="hidden" name="project_name" id="project_name" value="Proyecto Digital" />
+                    <textarea name="documentation" id="documentation" hidden></textarea>
+                    <textarea name="context" id="context" hidden></textarea>
+
+            </form>
+            <div id="form-status" class="status"></div>
+        </section>
+
+        <!-- SECCIÓN DE GENERACIÓN (layout dos paneles como RAG) -->
+        <section id="preview-section" class="two-panel-layout hidden">
+
+            <!-- Panel Izquierdo: Info del Proyecto y Documentos -->
+            <div class="panel left-panel">
+                <div class="panel-header">
+                    <h2>📋 Proyecto</h2>
+                    <button type="button" id="cancelPreviewBtn" class="btn-ghost" title="Volver">←</button>
+                </div>
+
+                <!-- Loading state -->
+                <div id="preview-loading" class="preview-loading">
+                    <div class="spinner"></div>
+                    <span>Analizando documentación...</span>
+                </div>
+
+                <!-- Project Info -->
+                <div id="preview-content" class="hidden">
+                    <div class="project-info">
+                        <div class="info-row">
+                            <span class="info-label">👤 Cliente</span>
+                            <span id="preview-client" class="info-value">-</span>
+                        </div>
+                        <div class="info-row full">
+                            <span class="info-label">📝 Resumen</span>
+                            <p id="preview-summary" class="info-summary">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Contexto Adicional del Proyecto -->
+                    <div class="context-section">
+                        <div class="section-header">
+                            <h3>💬 Contexto Adicional</h3>
+                            <span id="context-status" class="context-status-badge hidden">✓ Activo</span>
+                        </div>
+                        <textarea id="additional-context" class="context-textarea" placeholder="Escribe aquí información adicional para el LLM...
+
+Ejemplos:
+• Restricciones tecnológicas
+• Preferencias del cliente
+• Requisitos de seguridad
+• Integraciones específicas"></textarea>
+                        <div class="context-actions">
+                            <small class="context-hint">💡 Se aplica automáticamente al generar</small>
+                            <span id="context-char-count" class="char-count">0 caracteres</span>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Documentos a Generar -->
+                    <div class="artifacts-section">
+                        <div class="section-header">
+                            <h3>📄 Artefactos a Generar</h3>
+                            <span id="artifacts-count" class="count-badge">0/10</span>
+                            <div class="session-controls">
+                                <button type="button" id="saveSessionBtn" class="btn-session save"
+                                    title="Guardar sesión">💾</button>
+                                <button type="button" id="loadSessionBtn" class="btn-session load"
+                                    title="Cargar sesión">📂</button>
+                            </div>
+                        </div>
+                        <button type="button" id="exportAllBtn" class="btn-export-all" disabled>
+                            📥 Exportar Todo (Word)
+                        </button>
+
+                        <ul id="artifacts-list" class="artifacts-list">
+                            <li data-artifact="architecture">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">🏗️</span>
+                                    <span class="artifact-name">Diagrama de Arquitectura</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="architecture">Generar</button>
+                            </li>
+                            <li data-artifact="team">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">👥</span>
+                                    <span class="artifact-name">Propuesta de Equipo</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="team">Generar</button>
+                            </li>
+                            <li data-artifact="epics">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">📋</span>
+                                    <span class="artifact-name">Épicas del Proyecto</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="epics">Generar</button>
+                            </li>
+                            <li data-artifact="gantt" data-requires="architecture,team,epics">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">📅</span>
+                                    <span class="artifact-name">Cronograma (Gantt)</span>
+                                    <span class="dependency-badge"
+                                        title="Requiere: Arquitectura, Equipo, Épicas">🔗</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="gantt" disabled>Generar</button>
+                            </li>
+                            <li data-artifact="economics" data-requires="gantt">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">💰</span>
+                                    <span class="artifact-name">Propuesta Económica</span>
+                                    <span class="dependency-badge" title="Requiere: Cronograma">🔗</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="economics" disabled>Generar</button>
+                            </li>
+                            <li data-artifact="risks">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">⚠️</span>
+                                    <span class="artifact-name">Análisis de Riesgos</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="risks">Generar</button>
+                            </li>
+                            <li data-artifact="prerequisites">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">📝</span>
+                                    <span class="artifact-name">Prerrequisitos</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="prerequisites">Generar</button>
+                            </li>
+                            <li data-artifact="questions">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">❓</span>
+                                    <span class="artifact-name">Consultas al Cliente</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="questions">Generar</button>
+                            </li>
+                            <li data-artifact="improvements">
+                                <div class="artifact-info">
+                                    <span class="artifact-icon">💡</span>
+                                    <span class="artifact-name">Mejoras Técnicas</span>
+                                </div>
+                                <button class="btn-generate" data-artifact="improvements">Generar</button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <!-- Panel Derecho: Contenido Generado -->
+            <div class="panel right-panel">
+                <div class="panel-header">
+                    <h2>📄 Artefacto Generado</h2>
+                    <button type="button" id="exportPdfBtn" class="btn-ghost hidden" title="Exportar PDF">📥</button>
+                </div>
+
+                <div id="artifact-content" class="artifact-content">
+                    <div class="empty-state">
+                        <span class="empty-icon">✨</span>
+                        <p>Selecciona un artefacto para generar</p>
+                        <small>O genera todos con un solo clic</small>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- DASHBOARD DE RESULTADOS -->
+        <section id="dashboard" class="hidden">
+            <div class="card" id="dashboard-actions"
+                style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;justify-content:space-between">
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                    <button type="button" id="backBtn" style="background:#334155">← Nueva Consulta</button>
+                    <button type="button" id="downloadJsonBtn" style="background:#0052cc">📥 Descargar JSON</button>
+                </div>
+                <div id="project-title" style="font-size:1rem;font-weight:bold;color:#0052cc"></div>
+            </div>
+
+            <!-- BARRA DE PROGRESO -->
+            <div id="progress-container" class="card" style="display:none">
+                <h3 style="margin:0 0 1rem 0">⏳ Generando artefactos del proyecto...</h3>
+                <div style="display:flex;align-items:center;gap:1rem">
+                    <div style="flex:1">
+                        <div style="height:24px;background:#334155;border-radius:4px;overflow:hidden;position:relative">
+                            <div id="progress-bar"
+                                style="height:100%;background:linear-gradient(90deg,#0052cc,#0066ff);width:0%;transition:width 0.3s ease;display:flex;align-items:center;justify-content:center">
+                                <span id="progress-text"
+                                    style="color:white;font-size:0.75rem;font-weight:bold">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p id="progress-message" style="margin-top:0.5rem;font-size:0.85rem;color:#94a3b8"></p>
+            </div>
+
+            <!-- RESUMEN EJECUTIVO -->
+            <div class="card" id="summary-card" style="display:none">
+                <h2>📊 Resumen Ejecutivo</h2>
+                <div id="summary-grid" class="summary-grid"></div>
+            </div>
+
+            <!-- ARQUITECTURA -->
+            <div class="card" id="architecture-card" style="display:none">
+                <h2>🏗️ Arquitectura del Sistema</h2>
+                <details open>
+                    <summary
+                        style="cursor:pointer;padding:0.5rem;background:#1e293b;border-radius:6px;font-weight:bold;color:#0052cc">
+                        Ver Diagrama de Arquitectura
+                    </summary>
+                    <div id="architecture-diagram" class="mermaid-container"></div>
+                    <pre id="architecture-code" class="code-block"></pre>
+                </details>
+            </div>
+
+            <!-- GANTT -->
+            <div class="card" id="gantt-card" style="display:none">
+                <h2>📅 Cronograma del Proyecto (Gantt)</h2>
+                <details open>
+                    <summary
+                        style="cursor:pointer;padding:0.5rem;background:#1e293b;border-radius:6px;font-weight:bold;color:#0052cc">
+                        Ver Diagrama de Gantt
+                    </summary>
+                    <div id="gantt-diagram" class="mermaid-container"></div>
+                    <pre id="gantt-code" class="code-block"></pre>
+                </details>
+            </div>
+
+            <!-- EQUIPO -->
+            <div class="card" id="team-card" style="display:none">
+                <h2>👥 Propuesta de Equipo</h2>
+                <div id="team-summary" class="metrics-grid"></div>
+                <div id="team-roles" style="margin-top:1rem"></div>
+            </div>
+
+            <!-- ÉPICAS -->
+            <div class="card" id="epics-card" style="display:none">
+                <h2>📋 Épicas del Proyecto</h2>
+                <div id="epics-list"></div>
+            </div>
+
+            <!-- PROPUESTA ECONÓMICA -->
+            <div class="card" id="economics-card" style="display:none">
+                <h2>💰 Propuesta Económica</h2>
+                <div id="economics-summary" class="metrics-grid"></div>
+                <div id="economics-breakdown" style="margin-top:1rem"></div>
+                <div id="economics-milestones" style="margin-top:1rem"></div>
+            </div>
+
+            <!-- RIESGOS Y PRERREQUISITOS -->
+            <div class="card" id="risks-card" style="display:none">
+                <h2>⚠️ Riesgos y Prerrequisitos</h2>
+                <div id="risks-section">
+                    <h3 style="color:#ef4444;margin-bottom:0.75rem">Riesgos Identificados</h3>
+                    <div id="risks-list"></div>
+                </div>
+                <div id="prerequisites-section" style="margin-top:1.5rem">
+                    <h3 style="color:#f59e0b;margin-bottom:0.75rem">Prerrequisitos</h3>
+                    <div id="prerequisites-list"></div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Project Generator Agent v1.0 • Powered by LangGraph & Azure OpenAI</p>
+    </footer>
+
+    <!-- MODAL: Fecha de inicio del Gantt -->
+    <div id="gantt-date-modal" class="modal hidden">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <h3>📅 Fecha de Inicio del Proyecto</h3>
+            <p>Selecciona la fecha de inicio para calcular el cronograma:</p>
+            <input type="date" id="gantt-start-date" class="date-input" />
+            <div class="modal-actions">
+                <button type="button" id="cancel-gantt-modal" class="btn-secondary">Cancelar</button>
+                <button type="button" id="confirm-gantt-modal" class="btn-primary">Generar Cronograma</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/web/app.js"></script>
+</body>
+
+</html>

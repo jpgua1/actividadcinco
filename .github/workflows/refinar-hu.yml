@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   refinar:
-    name: Refinar HU con OpenAI
+    name: Refinar HU con Azure OpenAI
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +25,7 @@ jobs:
           python-version: '3.12'
 
       - name: 📦 Instalar dependencias
-        run: pip install requests
+        run: pip install openai>=1.0.0
 
       - name: 🔍 Detectar archivos HU modificados
         id: cambios
@@ -36,7 +36,10 @@ jobs:
 
       - name: ✍️ Refinar historias de usuario
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_DEPLOYMENT_NAME: ${{ secrets.AZURE_DEPLOYMENT_NAME }}
         run: |
           mkdir -p refinada
           for FILE in ${{ steps.cambios.outputs.archivos }}; do

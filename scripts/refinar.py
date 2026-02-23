@@ -1,15 +1,13 @@
-#!/usr/bin/env python3
-"""
-Refinador de Historias de Usuario con Google Gemini (REST API)
+#!/usr/bin/env python3"""
+Refinador de Historias de Usuario con Azure OpenAI
 Uso: python scripts/refinar.py hu/HU-001.txt
 """
 
 import sys
 import os
 import re
-import json
-import requests
 from pathlib import Path
+from openai import AzureOpenAI
 
 PROMPT_SISTEMA = """
 Eres un agente experto en metodologías ágiles. Tu única tarea es transformar
@@ -69,33 +67,6 @@ ni bloques de código (sin triple backtick). Usa exactamente este formato:
 - **APIs / Servicios externos:** [si aplica]
 """
 
-# Modelos a intentar en orden de preferencia
-MODELOS = [
-    "gemini-1.5-flash-latest",
-    "gemini-1.5-flash",
-    "gemini-1.5-pro-latest",
-    "gemini-pro",
-]
-
-
-def llamar_gemini(api_key: str, modelo: str, contenido: str) -> str:
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{modelo}:generateContent?key={api_key}"
-    )
-    payload = {
-        "system_instruction": {"parts": [{"text": PROMPT_SISTEMA}]},
-        "contents": [
-            {"parts": [{"text": f"Refina esta historia de usuario:\n\n{contenido}"}]}
-        ],
-        "generationConfig": {"temperature": 0.3},
-    }
-    resp = requests.post(url, json=payload, timeout=60)
-    if resp.status_code == 200:
-        data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-    return None
-
 
 def refinar_hu(ruta_entrada: str) -> None:
     entrada = Path(ruta_entrada)
@@ -106,26 +77,30 @@ def refinar_hu(ruta_entrada: str) -> None:
     contenido = entrada.read_text(encoding="utf-8").strip()
     nombre_salida = entrada.stem + ".md"
     ruta_salida = Path("refinada") / nombre_salida
-    api_key = os.environ["GEMINI_API_KEY"]
 
     print(f"📄 Leyendo: {entrada}")
+    print(f"💬 Enviando a Azure OpenAI para refinamiento...")
 
-    markdown = None
-    for modelo in MODELOS:
-        print(f"💬 Intentando con modelo: {modelo}...")
-        markdown = llamar_gemini(api_key, modelo, contenido)
-        if markdown:
-            print(f"✅ Respuesta recibida de {modelo}")
-            break
-        else:
-            print(f"⚠️  {modelo} no disponible, probando siguiente...")
+    cliente = AzureOpenAI(
+        azure_endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
+        api_key=os.environ["AZURE_OPENAI_API_KEY"],
+        api_version=os.environ.get("AZURE_OPENAI_API_VERSION", "2025-04-01-preview"),
+    )
 
-    if not markdown:
-        print("❌ Ningún modelo de Gemini respondió correctamente.")
-        sys.exit(1)
+    respuesta = cliente.chat.completions.create(
+        model=os.environ.get("AZURE_DEPLOYMENT_NAME", "gpt-4.1"),
+        messages=[
+            {"role": "system", "content": PROMPT_SISTEMA},
+            {"role": "user", "content": f"Refina esta historia de usuario:\n\n{contenido}"},
+        ],
+        temperature=0.3,
+        max_tokens=4000,
+    )
+
+    markdown = respuesta.choices[0].message.content.strip()
 
     # Limpiar posibles bloques de código
-    markdown = re.sub(r"^```(?:markdown)?\n?", "", markdown.strip())
+    markdown = re.sub(r"^```(?:markdown)?\n?", "", markdown)
     markdown = re.sub(r"\n?```$", "", markdown)
 
     ruta_salida.parent.mkdir(parents=True, exist_ok=True)
