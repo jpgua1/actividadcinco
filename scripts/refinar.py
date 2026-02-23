@@ -81,12 +81,12 @@ def refinar_hu(ruta_entrada: str) -> None:
     ruta_salida = Path("refinada") / nombre_salida
 
     print(f"📄 Leyendo: {entrada}")
-    print(f"💬 Enviando a Gemini 2.0 Flash para refinamiento...")
+    print(f"💬 Enviando a Gemini 1.5 Flash para refinamiento...")
 
     cliente = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     respuesta = cliente.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-1.5-flash",
         contents=f"Refina esta historia de usuario:\n\n{contenido}",
         config=types.GenerateContentConfig(
             system_instruction=PROMPT_SISTEMA,
