@@ -5,71 +5,78 @@ import shutil
 import types
 import pytest
 from pathlib import Path
-from unittest import mock
+from unittest.mock import patch, MagicMock
 
 # Importar la función a testear
-test_dir = os.path.abspath(os.path.dirname(__file__))
-scripts_dir = os.path.abspath(os.path.join(test_dir, '..', 'scripts'))
-sys.path.insert(0, scripts_dir)
-from refinar import refinar_hu
+def import_refinar_hu():
+    sys.path.insert(0, str(Path(__file__).parent.parent / 'scripts'))
+    from refinar import refinar_hu
+    return refinar_hu
 
-class DummyResponse:
-    class Choices:
-        class Message:
-            content = "# Historia refinada\n\n## Historia de Usuario\n> Como **usuario**, quiero **algo** para **beneficio**."
-        message = Message()
-    choices = [Choices()]
 
-class DummyClient:
-    def __init__(self, *args, **kwargs):
-        pass
-    class chat:
-        class completions:
-            @staticmethod
-            def create(*args, **kwargs):
-                return DummyResponse()
+def test_refinar_hu_archivo_no_encontrado(monkeypatch):
+    refinar_hu = import_refinar_hu()
+    with pytest.raises(SystemExit) as excinfo:
+        refinar_hu('no_existe.txt')
+    assert excinfo.value.code == 1
 
-@mock.patch.dict(os.environ, {
-    "AZURE_OPENAI_ENDPOINT": "dummy_endpoint",
-    "AZURE_OPENAI_API_KEY": "dummy_key",
-    "AZURE_OPENAI_API_VERSION": "dummy_version",
-    "AZURE_DEPLOYMENT_NAME": "dummy_model"
-})
-@mock.patch("refinar.AzureOpenAI", DummyClient)
-def test_refinar_hu_crea_markdown(tmp_path):
-    # Crear archivo de entrada temporal
-    entrada = tmp_path / "HU-001.txt"
-    entrada.write_text("Como usuario, quiero algo para beneficio.")
 
-    # Crear carpeta de salida
-    refinada_dir = tmp_path / "refinada"
-    refinada_dir.mkdir()
-    salida = refinada_dir / "HU-001.md"
+def test_refinar_hu_flujo_exitoso(monkeypatch):
+    refinar_hu = import_refinar_hu()
+    # Crear archivo temporal de entrada
+    with tempfile.TemporaryDirectory() as tmpdir:
+        entrada_path = Path(tmpdir) / 'HU-001.txt'
+        entrada_path.write_text('Historia de usuario de prueba', encoding='utf-8')
+        salida_dir = Path(tmpdir) / 'refinada'
+        salida_path = salida_dir / 'HU-001.md'
 
-    # Cambiar cwd temporalmente para que la salida se escriba en la carpeta correcta
-    old_cwd = os.getcwd()
-    os.chdir(tmp_path)
-    try:
-        refinar_hu(str(entrada))
-        # Verificar que el archivo markdown fue creado
-        assert salida.exists()
-        contenido = salida.read_text(encoding="utf-8")
-        assert "# Historia refinada" in contenido
-        assert "Historia de Usuario" in contenido
-    finally:
-        os.chdir(old_cwd)
+        # Mock de AzureOpenAI y respuesta
+        mock_cliente = MagicMock()
+        mock_respuesta = MagicMock()
+        mock_respuesta.choices = [types.SimpleNamespace(message=types.SimpleNamespace(content='# Historia refinada'))]
+        mock_cliente.chat.completions.create.return_value = mock_respuesta
 
-@mock.patch.dict(os.environ, {
-    "AZURE_OPENAI_ENDPOINT": "dummy_endpoint",
-    "AZURE_OPENAI_API_KEY": "dummy_key",
-    "AZURE_OPENAI_API_VERSION": "dummy_version",
-    "AZURE_DEPLOYMENT_NAME": "dummy_model"
-})
-@mock.patch("refinar.AzureOpenAI", DummyClient)
-def test_refinar_hu_archivo_no_encontrado(tmp_path, capsys):
-    entrada = tmp_path / "noexiste.txt"
-    with pytest.raises(SystemExit) as e:
-        refinar_hu(str(entrada))
-    captured = capsys.readouterr()
-    assert "Archivo no encontrado" in captured.out
-    assert e.value.code == 1
+        monkeypatch.setenv('AZURE_OPENAI_ENDPOINT', 'endpoint')
+        monkeypatch.setenv('AZURE_OPENAI_API_KEY', 'key')
+        monkeypatch.setenv('AZURE_OPENAI_API_VERSION', '2025-04-01-preview')
+        monkeypatch.setenv('AZURE_DEPLOYMENT_NAME', 'gpt-4.1')
+
+        with patch('refinar.AzureOpenAI', return_value=mock_cliente):
+            # Cambiar cwd temporalmente para que escriba en el tmpdir
+            old_cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                refinar_hu(str(entrada_path))
+                assert salida_path.exists()
+                contenido = salida_path.read_text(encoding='utf-8')
+                assert contenido.startswith('# Historia refinada')
+            finally:
+                os.chdir(old_cwd)
+
+
+def test_refinar_hu_limpia_bloques_codigo(monkeypatch):
+    refinar_hu = import_refinar_hu()
+    with tempfile.TemporaryDirectory() as tmpdir:
+        entrada_path = Path(tmpdir) / 'HU-002.txt'
+        entrada_path.write_text('Historia de usuario de prueba', encoding='utf-8')
+        salida_path = Path(tmpdir) / 'refinada' / 'HU-002.md'
+
+        mock_cliente = MagicMock()
+        # Simula respuesta con bloque de código markdown
+        mock_respuesta = MagicMock()
+        mock_respuesta.choices = [types.SimpleNamespace(message=types.SimpleNamespace(content='```markdown\n# Historia refinada\n```'))]
+        mock_cliente.chat.completions.create.return_value = mock_respuesta
+
+        monkeypatch.setenv('AZURE_OPENAI_ENDPOINT', 'endpoint')
+        monkeypatch.setenv('AZURE_OPENAI_API_KEY', 'key')
+
+        with patch('refinar.AzureOpenAI', return_value=mock_cliente):
+            old_cwd = os.getcwd()
+            os.chdir(tmpdir)
+            try:
+                refinar_hu(str(entrada_path))
+                assert salida_path.exists()
+                contenido = salida_path.read_text(encoding='utf-8')
+                assert contenido == '# Historia refinada'
+            finally:
+                os.chdir(old_cwd)
